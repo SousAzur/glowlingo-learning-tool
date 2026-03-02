@@ -89,14 +89,22 @@
 
     <!-- 主要内容区域 -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <!-- 搜索区域 - 参考图片样式 -->
+        <!-- 搜索区域 - 使用API搜索单词和翻译 -->
         <div class="py-3">
             <div class="flex gap-0">
-                <input type="text" id="searchInput" placeholder="Search..." class="flex-1 px-3 py-2 rounded-l-md border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                <input type="text" id="searchInput" placeholder="Search or translate..." class="flex-1 px-3 py-2 rounded-l-md border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                <select id="translateLang" class="px-2 py-2 border-y border-neutral-300 bg-white text-sm focus:outline-none">
+                    <option value="en-ko">EN → KO</option>
+                    <option value="en-es">EN → ES</option>
+                    <option value="ko-en">KO → EN</option>
+                    <option value="es-en">ES → EN</option>
+                    <option value="en">Search Dictionary</option>
+                </select>
                 <button id="searchBtn" class="bg-primary text-white px-3 py-2 rounded-r-md hover:bg-primary/90 transition-colors">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
+            <div id="searchResult" class="mt-2 hidden"></div>
         </div>
 
         <!-- 每日一句区域 - 参考图片样式 -->
@@ -142,25 +150,21 @@
                 </button>
             </div>
             <div id="grammarGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- 语法卡片1 -->
+                <!-- 语法卡片1 - 韩语 -->
                 <div class="grammar-card bg-white rounded-md shadow-sm p-4 card-hover relative overflow-hidden">
                     <div class="grammar-content">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-base font-medium text-neutral-800" id="grammarTitle1">Present Tense</h3>
+                            <h3 class="text-base font-medium text-neutral-800" id="grammarTitle1">Korean Grammar</h3>
                             <button class="play-grammar-audio text-primary hover:text-primary/80" data-grammar-index="0">
                                 <i class="fas fa-volume-up"></i>
                             </button>
                         </div>
                         <div class="space-y-2 text-sm text-neutral-700" id="grammarContent1">
-                            <p><strong>Korean:</strong> 나는 먹어요 (I eat)</p>
-                            <p><strong>English:</strong> I eat</p>
-                            <p><strong>Spanish:</strong> Yo como</p>
+                            <p><strong>Title:</strong> Present Tense</p>
+                            <p><strong>Example:</strong> 나는 먹어요 (I eat)</p>
                             <p class="text-xs text-neutral-500 mt-2">Usage: Used to express actions that are happening now or habitual actions</p>
-                            <p class="mt-2">
-                                <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="0">more</button>
-                            </p>
-                            <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
-                                ${getGrammarDetails(0)}
+                            <div class="grammar-details mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700" id="grammarDetails1">
+                                Loading...
                             </div>
                         </div>
                     </div>
@@ -176,25 +180,21 @@
                         </button>
                     </div>
                 </div>
-                <!-- 语法卡片2 -->
+                <!-- 语法卡片2 - 西班牙语 -->
                 <div class="grammar-card bg-white rounded-md shadow-sm p-4 card-hover relative overflow-hidden">
                     <div class="grammar-content">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-base font-medium text-neutral-800" id="grammarTitle2">Past Tense</h3>
+                            <h3 class="text-base font-medium text-neutral-800" id="grammarTitle2">Spanish Grammar</h3>
                             <button class="play-grammar-audio text-primary hover:text-primary/80" data-grammar-index="1">
                                 <i class="fas fa-volume-up"></i>
                             </button>
                         </div>
                         <div class="space-y-2 text-sm text-neutral-700" id="grammarContent2">
-                            <p><strong>Korean:</strong> 나는 먹었어요 (I ate)</p>
-                            <p><strong>English:</strong> I ate</p>
-                            <p><strong>Spanish:</strong> Yo comí</p>
-                            <p class="text-xs text-neutral-500 mt-2">Usage: Used to express actions that happened in the past</p>
-                            <p class="mt-2">
-                                <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="1">more</button>
-                            </p>
-                            <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
-                                ${getGrammarDetails(1)}
+                            <p><strong>Title:</strong> Present Tense</p>
+                            <p><strong>Example:</strong> Yo como (I eat)</p>
+                            <p class="text-xs text-neutral-500 mt-2">Usage: Used to express actions that are happening now or habitual actions</p>
+                            <div class="grammar-details mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700" id="grammarDetails2">
+                                Loading...
                             </div>
                         </div>
                     </div>
@@ -521,8 +521,20 @@
             updateGrammarCard();
             
             // 搜索功能
-            searchInput.addEventListener('input', handleSearch);
+            searchInput.addEventListener('input', () => {
+                if (searchInput.value.trim() === '') {
+                    document.getElementById('searchResult').classList.add('hidden');
+                    contentGrid.classList.remove('hidden');
+                    currentSearch = "";
+                    renderContent();
+                }
+            });
             searchBtn.addEventListener('click', handleSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
             
             // 每日一句刷新
             refreshDaily.addEventListener('click', () => {
@@ -901,38 +913,30 @@
 
         // 更新语法卡片
         function updateGrammarCard() {
-            // 更新第一张语法卡片
+            // 更新第一张语法卡片 - 韩语
             const grammar1 = data.grammar[currentGrammarIndex];
-            document.getElementById('grammarTitle1').textContent = grammar1.title;
+            document.getElementById('grammarTitle1').textContent = 'Korean Grammar';
             document.getElementById('grammarContent1').innerHTML = `
-                <p><strong>Korean:</strong> ${grammar1.korean}</p>
-                <p><strong>English:</strong> ${grammar1.english}</p>
-                <p><strong>Spanish:</strong> ${grammar1.spanish}</p>
+                <p><strong>Title:</strong> ${grammar1.title}</p>
+                <p><strong>Example:</strong> ${grammar1.korean}</p>
                 <p class="text-xs text-neutral-500 mt-2">${grammar1.usage}</p>
-                <p class="mt-2">
-                    <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="${currentGrammarIndex}">more</button>
-                </p>
-                <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
-                    ${getGrammarDetails(currentGrammarIndex)}
-                </div>
             `;
+            // 直接显示韩语语法详解
+            const details1 = getGrammarDetails(currentGrammarIndex);
+            document.getElementById('grammarDetails1').innerHTML = details1;
             
-            // 更新第二张语法卡片
+            // 更新第二张语法卡片 - 西班牙语
             const nextIndex = (currentGrammarIndex + 1) % data.grammar.length;
             const grammar2 = data.grammar[nextIndex];
-            document.getElementById('grammarTitle2').textContent = grammar2.title;
+            document.getElementById('grammarTitle2').textContent = 'Spanish Grammar';
             document.getElementById('grammarContent2').innerHTML = `
-                <p><strong>Korean:</strong> ${grammar2.korean}</p>
-                <p><strong>English:</strong> ${grammar2.english}</p>
-                <p><strong>Spanish:</strong> ${grammar2.spanish}</p>
+                <p><strong>Title:</strong> ${grammar2.title}</p>
+                <p><strong>Example:</strong> ${grammar2.spanish}</p>
                 <p class="text-xs text-neutral-500 mt-2">${grammar2.usage}</p>
-                <p class="mt-2">
-                    <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="${nextIndex}">more</button>
-                </p>
-                <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
-                    ${getGrammarDetails(nextIndex)}
-                </div>
             `;
+            // 直接显示西班牙语语法详解
+            const details2 = getGrammarDetails(nextIndex);
+            document.getElementById('grammarDetails2').innerHTML = details2;
             
             // 更新语法卡片操作按钮
             const favoriteBtns = document.querySelectorAll('.mark-grammar-favorite');
@@ -957,10 +961,235 @@
             renderContent();
         }
 
-        // 搜索处理
-        function handleSearch() {
-            currentSearch = searchInput.value.toLowerCase();
-            renderContent();
+        // 翻译语言配置
+        const translateLang = document.getElementById('translateLang');
+        
+        // 搜索处理 - 使用Free Dictionary API + 翻译API
+        async function handleSearch() {
+            const searchTerm = searchInput.value.trim();
+            const langOption = translateLang.value;
+            
+            if (!searchTerm) {
+                currentSearch = "";
+                renderContent();
+                return;
+            }
+            
+            // 如果选择了翻译模式
+            if (langOption !== 'en') {
+                await handleTranslation(searchTerm, langOption);
+                return;
+            }
+            
+            const lowerSearch = searchTerm.toLowerCase();
+            
+            // 首先在本地数据中搜索
+            const localResults = data.words.filter(item => 
+                item.english.toLowerCase().includes(lowerSearch) || 
+                item.korean.toLowerCase().includes(lowerSearch) || 
+                item.spanish.toLowerCase().includes(lowerSearch)
+            );
+            
+            if (localResults.length > 0) {
+                // 显示本地搜索结果
+                displaySearchResults(localResults, 'Local Results');
+                return;
+            }
+            
+            // 调用Free Dictionary API
+            try {
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${lowerSearch}`);
+                
+                if (response.ok) {
+                    const apiData = await response.json();
+                    displayAPISearchResults(apiData);
+                } else {
+                    showSearchMessage('No results found. Try a different word.', 'error');
+                }
+            } catch (error) {
+                showSearchMessage('Error fetching data. Please check your internet connection.', 'error');
+            }
+        }
+        
+        // 翻译功能 - 使用免费的MyMemory API
+        async function handleTranslation(text, langPair) {
+            const [sourceLang, targetLang] = langPair.split('-');
+            const searchResult = document.getElementById('searchResult');
+            
+            searchResult.classList.remove('hidden');
+            searchResult.innerHTML = `
+                <div class="bg-white rounded-md shadow-sm p-4 text-center">
+                    <div class="flex justify-center items-center gap-2">
+                        <i class="fas fa-spinner fa-spin text-primary"></i>
+                        <span class="text-neutral-600">Translating...</span>
+                    </div>
+                </div>
+            `;
+            
+            contentGrid.classList.add('hidden');
+            
+            try {
+                // 使用MyMemory免费翻译API
+                const langCode = `${sourceLang}|${targetLang}`;
+                const response = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langCode}`
+                );
+                
+                const data = await response.json();
+                
+                if (data.responseStatus === 200) {
+                    displayTranslationResult(text, data.responseData.translatedText, sourceLang, targetLang);
+                } else {
+                    showSearchMessage('Translation failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                showSearchMessage('Error connecting to translation service.', 'error');
+            }
+        }
+        
+        // 显示翻译结果
+        function displayTranslationResult(original, translated, sourceLang, targetLang) {
+            const searchResult = document.getElementById('searchResult');
+            
+            const langNames = {
+                'en': 'English',
+                'ko': 'Korean', 
+                'es': 'Spanish'
+            };
+            
+            searchResult.innerHTML = `
+                <div class="bg-white rounded-md shadow-sm p-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-neutral-900">Translation</h3>
+                            <p class="text-sm text-neutral-500">${langNames[sourceLang]} → ${langNames[targetLang]}</p>
+                        </div>
+                        <button class="play-translation text-primary hover:text-primary/80 text-xl" data-text="${translated}">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-neutral-50 rounded-lg p-4 mb-3">
+                        <p class="text-xs text-neutral-500 mb-1">${langNames[sourceLang]}</p>
+                        <p class="text-lg text-neutral-800">${original}</p>
+                    </div>
+                    
+                    <div class="bg-primary/5 rounded-lg p-4">
+                        <p class="text-xs text-primary mb-1">${langNames[targetLang]}</p>
+                        <p class="text-lg text-neutral-800 font-medium">${translated}</p>
+                    </div>
+                </div>
+            `;
+            
+            // 添加播放按钮事件
+            document.querySelector('.play-translation')?.addEventListener('click', function() {
+                const utterance = new SpeechSynthesisUtterance(translated);
+                utterance.lang = targetLang === 'ko' ? 'ko-KR' : targetLang === 'es' ? 'es-ES' : 'en-US';
+                speechSynthesis.speak(utterance);
+            });
+        }
+        
+        // 显示搜索结果
+        function displaySearchResults(results, title) {
+            const searchResult = document.getElementById('searchResult');
+            searchResult.classList.remove('hidden');
+            
+            let html = `<div class="bg-white rounded-md shadow-sm p-4">
+                <h3 class="text-lg font-bold text-neutral-900 mb-2">${title} (${results.length})</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">`;
+            
+            results.slice(0, 6).forEach(item => {
+                html += `
+                    <div class="bg-neutral-50 rounded p-3 cursor-pointer hover:bg-neutral-100" onclick="showWordDetail(${item.id})">
+                        <p class="font-medium text-neutral-800">${item.english}</p>
+                        <p class="text-sm text-neutral-600">${item.korean}</p>
+                        <p class="text-sm text-neutral-600">${item.spanish}</p>
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+            searchResult.innerHTML = html;
+            
+            // 隐藏单词卡片区域
+            contentGrid.classList.add('hidden');
+        }
+        
+        // 显示API搜索结果
+        function displayAPISearchResults(apiData) {
+            const searchResult = document.getElementById('searchResult');
+            searchResult.classList.remove('hidden');
+            
+            const word = apiData[0];
+            let html = `
+                <div class="bg-white rounded-md shadow-sm p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <h3 class="text-2xl font-bold text-neutral-900">${word.word}</h3>
+                            ${word.phonetic ? `<p class="text-neutral-500">${word.phonetic}</p>` : ''}
+                        </div>
+                        <button class="play-audio-api text-primary hover:text-primary/80 text-xl" data-word="${word.word}">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                    </div>
+            `;
+            
+            // 显示所有含义
+            word.meanings.forEach(meaning => {
+                html += `
+                    <div class="mb-3">
+                        <span class="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full mb-2">${meaning.partOfSpeech}</span>
+                `;
+                
+                meaning.definitions.slice(0, 2).forEach((def, index) => {
+                    html += `
+                        <p class="text-neutral-700 text-sm mb-1">
+                            <span class="text-neutral-500">${index + 1}.</span> ${def.definition}
+                            ${def.example ? `<br><span class="text-neutral-500 italic">"${def.example}"</span>` : ''}
+                        </p>
+                    `;
+                });
+                
+                // 显示同义词
+                if (meaning.synonyms && meaning.synonyms.length > 0) {
+                    html += `<p class="text-sm text-neutral-600 mt-1"><strong>Synonyms:</strong> ${meaning.synonyms.slice(0, 5).join(', ')}</p>`;
+                }
+                
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            searchResult.innerHTML = html;
+            
+            // 隐藏单词卡片区域
+            contentGrid.classList.add('hidden');
+            
+            // 添加播放按钮事件
+            document.querySelector('.play-audio-api')?.addEventListener('click', function() {
+                const wordText = this.dataset.word;
+                const utterance = new SpeechSynthesisUtterance(wordText);
+                speechSynthesis.speak(utterance);
+            });
+        }
+        
+        // 显示搜索消息
+        function showSearchMessage(message, type) {
+            const searchResult = document.getElementById('searchResult');
+            searchResult.classList.remove('hidden');
+            searchResult.innerHTML = `
+                <div class="bg-white rounded-md shadow-sm p-4 ${type === 'error' ? 'text-red-500' : 'text-neutral-700'}">
+                    ${message}
+                </div>
+            `;
+            contentGrid.classList.add('hidden');
+        }
+        
+        // 点击单词显示详情（本地数据）
+        function showWordDetail(id) {
+            const item = data.words.find(w => w.id === id);
+            if (item) {
+                alert(`${item.english}\nKorean: ${item.korean}\nSpanish: ${item.spanish}`);
+            }
         }
 
         // 切换主题
@@ -1267,53 +1496,68 @@
         function getGrammarDetails(index) {
             const grammarDetails = [
                 {
-                    english: "现在时表示正在发生的动作或习惯性动作。在英语中，动词用原形（第三人称单数加s）。",
-                    korean: "韩语现在时通常以'아요/어요'结尾，表示现在正在进行的动作或习惯性动作。",
-                    spanish: "西班牙语现在时根据主语的不同，动词有不同的变位形式。",
-                    examples: [
-                        "英语：I eat breakfast every morning.（我每天早上吃早餐。）",
-                        "韩语：나는 매일 아침 밥을 먹어요.（我每天早上吃早餐。）",
-                        "西班牙语：Yo como desayuno todas las mañanas.（我每天早上吃早餐。）"
+                    english: "现在时表示正在发生的动作或习惯性动作。在英语中，动词用原形（第三人称单数加s）。例如：I eat, She works, He plays。",
+                    korean: "韩语现在时通常以'아요/어요'结尾，表示现在正在进行的动作或习惯性动作。词干以元音结尾用'아요'，以辅音结尾用'어요'。例如：가다 → 가요, 먹다 → 먹어요。",
+                    spanish: "西班牙语现在时根据主语的不同，动词有不同的变位形式。以-ar结尾的动词规则变位：yo como, tú comes, él/ella come, nosotros comemos, ellos comen。",
+                    koreanExamples: [
+                        "나는 매일 아침 밥을 먹어요.（我每天早上吃早餐。）",
+                        "친구와 영화를 봐요.（我和朋友看电影。）"
+                    ],
+                    spanishExamples: [
+                        "Yo como desayuno todas las mañanas.（我每天早上吃早餐。）",
+                        "Ella trabaja en una oficina.（她在办公室工作。）"
                     ]
                 },
                 {
-                    english: "过去时表示过去发生的动作。在英语中，规则动词加ed，不规则动词有特殊变化。",
-                    korean: "韩语过去时通常以'았어요/었어요'结尾，表示过去发生的动作。",
-                    spanish: "西班牙语过去时有两种：简单过去时和过去未完成时，分别表示不同类型的过去动作。",
-                    examples: [
-                        "英语：I ate dinner yesterday.（我昨天吃了晚饭。）",
-                        "韩语：나는 어제 저녁을 먹었어요.（我昨天吃了晚饭。）",
-                        "西班牙语：Yo comí la cena ayer.（我昨天吃了晚饭。）"
+                    english: "过去时表示过去发生的动作。在英语中，规则动词加-ed，不规则动词有特殊变化。例如：walked, played, but went, ate, bought。",
+                    korean: "韩语过去时通常以'았어요/었어요'结尾，表示过去发生的动作。元音ㅏ/ㅗ后用'았어요'，其他用'먹었어요/봤어요'。例如：가다 → 갔어요, 먹다 → 먹었어요。",
+                    spanish: "西班牙语过去时有两种：简单过去时和过去未完成时。简单过去时表示已完成的过去动作，规则变位以-ar结尾：-é, -aste, -ó, -amos, -aron。",
+                    koreanExamples: [
+                        "어제 저녁을 먹었어요.（我昨天吃了晚饭。）",
+                        "주말에 친구 만났어요.（周末和朋友见面了。）"
+                    ],
+                    spanishExamples: [
+                        "Yo comí la cena ayer.（我昨天吃了晚饭。）",
+                        "Ella estudió español por dos años.（她学习了两年西班牙语。）"
                     ]
                 },
                 {
-                    english: "将来时表示将来要发生的动作。在英语中，通常用will或be going to表示。",
-                    korean: "韩语将来时通常以'을 거예요/할 거예요'结尾，表示将来要发生的动作。",
-                    spanish: "西班牙语将来时有两种：简单将来时和ir + a + 动词原形，表示将来要发生的动作。",
-                    examples: [
-                        "英语：I will eat lunch tomorrow.（我明天吃午饭。）",
-                        "韩语：나는 내일 점심을 먹을 거예요.（我明天吃午饭。）",
-                        "西班牙语：Yo comeré al mediodía mañana.（我明天吃午饭。）"
+                    english: "将来时表示将来要发生的动作。在英语中，通常用will或be going to表示。will表示临时决定，be going to表示计划好的动作。",
+                    korean: "韩语将来时通常以'을 거예요/할 거예요'结尾，表示将来要发生的动作。动词以辅音结尾用'-을 거예요'，以元音结尾用'-할 거예요'。",
+                    spanish: "西班牙语将来时有两种：简单将来时和ir + a + 动词原形。简单将来时表示将来一定会发生的动作，变位是在动词原形后加词尾。",
+                    koreanExamples: [
+                        "내일 점심을 먹을 거예요.（我明天要吃午饭。）",
+                        "다음 주에 여행 갈 거예요.（下周要去旅行。）"
+                    ],
+                    spanishExamples: [
+                        "Yo comeré al mediodía mañana.（我明天中午要吃饭。）",
+                        "Vamos a estudiar español el próximo año.（我们明年要学习西班牙语。）"
                     ]
                 },
                 {
-                    english: "现在进行时表示现在正在进行的动作。在英语中，用be动词加动词的现在分词形式。",
-                    korean: "韩语现在进行时通常以'고 있어요'结尾，表示现在正在进行的动作。",
-                    spanish: "西班牙语现在进行时用estar加动词的现在分词形式，表示现在正在进行的动作。",
-                    examples: [
-                        "英语：I am eating now.（我现在正在吃饭。）",
-                        "韩语：나는 지금 먹고 있어요.（我现在正在吃饭。）",
-                        "西班牙语：Estoy comiendo ahora.（我现在正在吃饭。）"
+                    english: "现在进行时表示现在正在进行的动作。在英语中，用be动词加动词的现在分词形式（-ing）。例如：I am eating, She is reading, They are playing。",
+                    korean: "韩语现在进行时通常以'고 있어요'结尾，表示现在正在进行的动作。动词词干 + 고 + 있어요。例如：먹다 → 먹고 있어요, 가다 → 가고 있어요。",
+                    spanish: "西班牙语现在进行时用estar加动词的现在分词形式，表示现在正在进行的动作。变位：estoy hablando, estás comiendo, está leyendo。",
+                    koreanExamples: [
+                        "나는 지금 먹고 있어요.（我现在正在吃饭。）",
+                        "친구는 지금 드라마 보고 있어요.（朋友现在正在看电视剧。）"
+                    ],
+                    spanishExamples: [
+                        "Estoy comiendo ahora.（我现在正在吃饭。）",
+                        "Ella está leyendo un libro.（她正在读一本书。）"
                     ]
                 },
                 {
-                    english: "复合句包含多个分句，表达更复杂的思想。在英语中，复合句通常由主句和从句组成，通过连接词连接。",
-                    korean: "韩语复合句通过各种连接词和语法结构来表达复杂的思想，如条件句、原因句等。",
-                    spanish: "西班牙语复合句由主句和一个或多个从句组成，通过连接词连接，表达复杂的逻辑关系。",
-                    examples: [
-                        "英语：When it rains, I stay at home and read books.（下雨的时候，我待在家里看书。）",
-                        "韩语：비가 올 때는 집에 있으면서 책을 읽어요.（下雨的时候，我待在家里看书。）",
-                        "西班牙语：Cuando llueve, me quedo en casa y leo libros.（下雨的时候，我待在家里看书。）"
+                    english: "复合句包含多个分句，表达更复杂的思想。在英语中，复合句通常由主句和从句组成，通过连接词（when, because, if, although等）连接。",
+                    korean: "韩语复合句通过各种连接词和语法结构来表达复杂的思想。常用连接词包括：-으면/면（如果）, -어서（因为）, -지만（虽然）, -(으)면서（同时）。",
+                    spanish: "西班牙语复合句由主句和一个或多个从句组成，通过连接词（cuando, porque, si, aunque等）连接，表达条件、原因、目的、让步等复杂逻辑关系。",
+                    koreanExamples: [
+                        "비가 올 때는 집에 있으면서 책을 읽어요.（下雨的时候，我待在家里看书。）",
+                        "한국에 여행 가면 김치를 먹고 싶어요.（如果去韩国旅行，我想吃泡菜。）"
+                    ],
+                    spanishExamples: [
+                        "Cuando llueve, me quedo en casa y leo libros.（下雨的时候，我待在家里看书。）",
+                        "Si tienes tiempo, podemos estudiar español juntos.（如果你有时间，我们可以一起学习西班牙语。）"
                     ]
                 }
             ];
@@ -1321,31 +1565,49 @@
             const details = grammarDetails[index];
             if (!details) return "No details available.";
             
-            let grammarExplanation = '';
-            let example = '';
+            let html = '';
             
-            if (currentLanguage === 'english') {
-                grammarExplanation = `<p><strong>英语语法：</strong>${details.english}</p>`;
-                example = details.examples[0];
-            } else if (currentLanguage === 'korean') {
-                grammarExplanation = `<p><strong>韩语语法：</strong>${details.korean}</p>`;
-                example = details.examples[1];
+            if (currentLanguage === 'korean') {
+                html = `
+                    <div class="space-y-2">
+                        <p><strong>语法说明：</strong>${details.korean}</p>
+                        <div class="mt-2">
+                            <p><strong>例句：</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                ${details.koreanExamples.map(ex => `<li>${ex}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
             } else if (currentLanguage === 'spanish') {
-                grammarExplanation = `<p><strong>西班牙语语法：</strong>${details.spanish}</p>`;
-                example = details.examples[2];
+                html = `
+                    <div class="space-y-2">
+                        <p><strong>语法说明：</strong>${details.spanish}</p>
+                        <div class="mt-2">
+                            <p><strong>例句：</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                ${details.spanishExamples.map(ex => `<li>${ex}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // 默认显示英语
+                html = `
+                    <div class="space-y-2">
+                        <p><strong>语法说明：</strong>${details.english}</p>
+                        <div class="mt-2">
+                            <p><strong>例句：</strong></p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>${details.koreanExamples[0]}</li>
+                                <li>${details.spanishExamples[0]}</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
             }
             
-            return `
-                <div class="space-y-2">
-                    ${grammarExplanation}
-                    <div class="mt-2">
-                        <p><strong>例句：</strong></p>
-                        <ul class="list-disc list-inside space-y-1 ml-2">
-                            <li>${example}</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
+            return html;
         }
 
         // 播放读音

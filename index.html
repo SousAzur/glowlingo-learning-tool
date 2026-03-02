@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlowLingo - Multilingual Learning Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/v4-shims.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        clover: '#22c55e',
+                        neutral: {
+                            100: '#F8FAFC',
+                            200: '#E2E8F0',
+                            300: '#CBD5E1',
+                            800: '#1E293B',
+                            900: '#0F172A'
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .clover-icon {
+                text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+            }
+            .btn-hover {
+                @apply transition-all duration-200 hover:opacity-90 hover:scale-105;
+            }
+            .smooth-transition {
+                @apply transition-all duration-300 ease-in-out;
+            }
+        }
+    </style>
+    <style>
+        /* 自定义滚动条 - 清爽风格 */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F8FAFC;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+    </style>
+</head>
+<body class="font-inter bg-neutral-100 text-neutral-800 min-h-screen flex flex-col">
+    <!-- 顶部导航栏 - 蓝色背景，仅显示Logo和用户登录 -->
+    <header class="bg-primary text-white py-3 px-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <div class="clover-icon text-2xl font-bold text-clover">🍀</div>
+            <h1 class="text-xl font-bold">GlowLingo</h1>
+        </div>
+        <!-- 语言模式选择 -->
+        <div class="flex items-center gap-3">
+            <div class="flex gap-1">
+                <button class="language-btn px-2 py-1 text-xs rounded bg-white/20 hover:bg-white/30 transition-colors btn-hover" data-language="english">EN</button>
+                <button class="language-btn px-2 py-1 text-xs rounded bg-white/20 hover:bg-white/30 transition-colors btn-hover" data-language="korean">KR</button>
+                <button class="language-btn px-2 py-1 text-xs rounded bg-white/20 hover:bg-white/30 transition-colors btn-hover" data-language="spanish">ES</button>
+            </div>
+            <!-- 用户登录按钮 -->
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center cursor-pointer" id="userProfileBtn">
+                <i class="fas fa-user text-white"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <!-- 搜索区域 - 参考图片样式 -->
+        <div class="py-3">
+            <div class="flex gap-0">
+                <input type="text" id="searchInput" placeholder="Search..." class="flex-1 px-3 py-2 rounded-l-md border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                <button id="searchBtn" class="bg-primary text-white px-3 py-2 rounded-r-md hover:bg-primary/90 transition-colors">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 每日一句区域 - 参考图片样式 -->
+        <section class="py-3 bg-white rounded-md shadow-sm mb-4">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-base font-bold text-neutral-900">Daily Whisper</h2>
+                <div class="flex items-center gap-2">
+                    <button id="refreshDaily" class="text-primary hover:text-primary/80 text-sm flex items-center gap-1">
+                        <i class="fas fa-refresh"></i>
+                        <span>Refresh</span>
+                    </button>
+                    <button id="favoriteDaily" class="text-neutral-600 hover:text-red-500 transition-colors">
+                        <i class="far fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="dailySentence" class="space-y-1 text-sm">
+                <div class="flex justify-between items-center">
+                    <p class="text-neutral-700">삼은 용기 있는 믿음이거나, 아무것도 아니다.</p>
+                    <button class="play-daily-audio text-primary hover:text-primary/80 text-sm">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <p class="text-neutral-700">"Life is either a daring adventure or nothing at all.</p>
+                <p class="text-neutral-700">"La vida es una aventura valiente o nada en absoluto.</p>
+                <p class="mt-2">
+                    <button id="moreDaily" class="text-primary text-xs hover:underline">more</button>
+                </p>
+            </div>
+            <div id="dailyDetails" class="hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
+                <p><strong>出处：</strong>海伦·凯勒（Helen Keller）</p>
+                <p class="mt-1"><strong>详细说明：</strong>这句话鼓励我们勇敢面对生活，将每一刻都视为一次冒险。海伦·凯勒作为一位盲聋作家和演说家，通过自己的经历告诉我们，只有勇敢地探索和体验，生活才有意义。无论是学习新语言还是面对挑战，都应该以积极的态度去拥抱每一个机会。</p>
+            </div>
+        </section>
+
+        <!-- 语法学习模块 -->
+        <section class="mb-6">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-lg font-bold text-neutral-900">Grammar Learning</h2>
+                <button id="refreshGrammar" class="text-primary hover:text-primary/80 text-sm flex items-center gap-1">
+                    <i class="fas fa-refresh"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            <div id="grammarGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- 语法卡片1 -->
+                <div class="grammar-card bg-white rounded-md shadow-sm p-4 card-hover relative overflow-hidden">
+                    <div class="grammar-content">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-base font-medium text-neutral-800" id="grammarTitle1">Present Tense</h3>
+                            <button class="play-grammar-audio text-primary hover:text-primary/80" data-grammar-index="0">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-2 text-sm text-neutral-700" id="grammarContent1">
+                            <p><strong>Korean:</strong> 나는 먹어요 (I eat)</p>
+                            <p><strong>English:</strong> I eat</p>
+                            <p><strong>Spanish:</strong> Yo como</p>
+                            <p class="text-xs text-neutral-500 mt-2">Usage: Used to express actions that are happening now or habitual actions</p>
+                            <p class="mt-2">
+                                <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="0">more</button>
+                            </p>
+                            <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
+                                ${getGrammarDetails(0)}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grammar-actions hidden absolute top-0 right-0 h-full w-48 bg-white shadow-lg p-4 space-y-2 transform translate-x-full transition-transform duration-300">
+                        <button class="mark-grammar-learned w-full py-1.5 px-3 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors" data-grammar-index="0">
+                            <i class="fas fa-check mr-1"></i> Mark as Learned
+                        </button>
+                        <button class="mark-grammar-review w-full py-1.5 px-3 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 transition-colors" data-grammar-index="0">
+                            <i class="fas fa-clock mr-1"></i> Add to Review
+                        </button>
+                        <button class="mark-grammar-favorite w-full py-1.5 px-3 bg-red-100 text-red-500 rounded-md text-sm hover:bg-red-200 transition-colors" data-grammar-index="0">
+                            <i class="far fa-heart mr-1"></i> Add to Favorites
+                        </button>
+                    </div>
+                </div>
+                <!-- 语法卡片2 -->
+                <div class="grammar-card bg-white rounded-md shadow-sm p-4 card-hover relative overflow-hidden">
+                    <div class="grammar-content">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-base font-medium text-neutral-800" id="grammarTitle2">Past Tense</h3>
+                            <button class="play-grammar-audio text-primary hover:text-primary/80" data-grammar-index="1">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-2 text-sm text-neutral-700" id="grammarContent2">
+                            <p><strong>Korean:</strong> 나는 먹었어요 (I ate)</p>
+                            <p><strong>English:</strong> I ate</p>
+                            <p><strong>Spanish:</strong> Yo comí</p>
+                            <p class="text-xs text-neutral-500 mt-2">Usage: Used to express actions that happened in the past</p>
+                            <p class="mt-2">
+                                <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="1">more</button>
+                            </p>
+                            <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
+                                ${getGrammarDetails(1)}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grammar-actions hidden absolute top-0 right-0 h-full w-48 bg-white shadow-lg p-4 space-y-2 transform translate-x-full transition-transform duration-300">
+                        <button class="mark-grammar-learned w-full py-1.5 px-3 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors" data-grammar-index="1">
+                            <i class="fas fa-check mr-1"></i> Mark as Learned
+                        </button>
+                        <button class="mark-grammar-review w-full py-1.5 px-3 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 transition-colors" data-grammar-index="1">
+                            <i class="fas fa-clock mr-1"></i> Add to Review
+                        </button>
+                        <button class="mark-grammar-favorite w-full py-1.5 px-3 bg-red-100 text-red-500 rounded-md text-sm hover:bg-red-200 transition-colors" data-grammar-index="1">
+                            <i class="far fa-heart mr-1"></i> Add to Favorites
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心学习内容区 -->
+        <section class="mb-6">
+            <!-- 标题和主题选项 -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-neutral-900">Word Learning</h2>
+                <div class="flex gap-2">
+                    <button class="theme-btn px-3 py-1 text-sm rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors btn-hover" data-theme="all">All</button>
+                    <button class="theme-btn px-3 py-1 text-sm rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors btn-hover" data-theme="daily">Daily Life</button>
+                    <button class="theme-btn px-3 py-1 text-sm rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors btn-hover" data-theme="travel">Travel</button>
+                    <button class="theme-btn px-3 py-1 text-sm rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors btn-hover" data-theme="work">Work</button>
+                </div>
+            </div>
+            <div id="contentGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <!-- 卡片会通过JS动态生成 -->
+            </div>
+        </section>
+
+        <!-- 底部清单区域 - 参考图片样式 -->
+        <section class="pb-6">
+            <div class="flex gap-3">
+                <button class="flex-1 bg-white rounded-md shadow-sm py-2 flex items-center justify-center gap-2 hover:shadow-md transition-shadow btn-hover" data-filter="all">
+                    <i class="fas fa-book text-primary"></i>
+                    <span>My Learning</span>
+                    <i class="fas fa-chevron-right text-xs text-neutral-500"></i>
+                </button>
+                <button class="flex-1 bg-white rounded-md shadow-sm py-2 flex items-center justify-center gap-2 hover:shadow-md transition-shadow btn-hover" data-filter="review">
+                    <i class="fas fa-check-square text-primary"></i>
+                    <span>Review List</span>
+                    <i class="fas fa-chevron-right text-xs text-neutral-500"></i>
+                </button>
+                <button class="flex-1 bg-white rounded-md shadow-sm py-2 flex items-center justify-center gap-2 hover:shadow-md transition-shadow btn-hover" data-filter="favorite">
+                    <i class="fas fa-heart text-red-500"></i>
+                    <span>Favorites</span>
+                    <i class="fas fa-chevron-right text-xs text-neutral-500"></i>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-md p-5 w-full max-w-sm">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-lg font-bold text-neutral-900" id="authModalTitle">User Login</h2>
+                <button id="closeLoginModal" class="text-neutral-500 hover:text-neutral-800">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <p class="text-center text-neutral-600 text-sm" id="authModalSubtitle">Choose Login Method</p>
+                <div class="space-y-2.5" id="authMethods">
+                    <button class="w-full py-2.5 rounded-md border border-neutral-200 flex items-center justify-center gap-2 hover:bg-neutral-50 transition-colors text-sm auth-method" data-method="doubao">
+                        <i class="fas fa-comment-dots text-blue-500"></i>
+                        <span>DouBao Login</span>
+                    </button>
+                    <button class="w-full py-2.5 rounded-md border border-neutral-200 flex items-center justify-center gap-2 hover:bg-neutral-50 transition-colors text-sm auth-method" data-method="wechat">
+                        <i class="fab fa-weixin text-green-500"></i>
+                        <span>WeChat Login</span>
+                    </button>
+                    <button class="w-full py-2.5 rounded-md border border-neutral-200 flex items-center justify-center gap-2 hover:bg-neutral-50 transition-colors text-sm auth-method" data-method="email">
+                        <i class="fas fa-envelope text-gray-500"></i>
+                        <span>Email Login</span>
+                    </button>
+                </div>
+                <div class="flex justify-center">
+                    <button id="toggleAuthMode" class="text-primary text-sm hover:underline">Switch to Register</button>
+                </div>
+                <p class="text-center text-xs text-neutral-500">Login to sync your learning progress</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 个人主页模态框 -->
+    <div id="profileModal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-md p-5 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-neutral-900">Personal Profile</h2>
+                <button id="closeProfileModal" class="text-neutral-500 hover:text-neutral-800">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <!-- 头像 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                        <i class="fas fa-user text-2xl text-primary" id="profileAvatar"></i>
+                    </div>
+                    <button id="changeAvatar" class="text-primary text-sm hover:underline">Change Avatar</button>
+                </div>
+                
+                <!-- 个人信息 -->
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Nickname</label>
+                        <input type="text" id="profileNickname" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" value="User">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Status/Signature</label>
+                        <input type="text" id="profileStatus" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" value="Learning languages">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Phone Number</label>
+                        <input type="text" id="profilePhone" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" value="">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Email</label>
+                        <input type="email" id="profileEmail" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" value="">
+                    </div>
+                </div>
+                
+                <!-- 学习统计 -->
+                <div class="bg-neutral-50 rounded-lg p-3">
+                    <h3 class="text-sm font-medium text-neutral-700 mb-2">Learning Stats</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-primary" id="loginDays">0</p>
+                            <p class="text-xs text-neutral-500">Login Days</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-primary" id="learnedWords">0</p>
+                            <p class="text-xs text-neutral-500">Learned Words</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 保存按钮 -->
+                <button id="saveProfile" class="w-full py-2.5 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        const data = {
+            words: [
+                // 日常生活
+                { id: 1, korean: "안녕하세요", english: "Hello", spanish: "Hola", koreanPhonetic: "/안녕하세요/", spanishPhonetic: "/ˈola/", status: "default", favorite: false, theme: "daily" },
+                { id: 2, korean: "사랑", english: "Love", spanish: "Amor", koreanPhonetic: "/사랑/", spanishPhonetic: "/aˈmoɾ/", status: "default", favorite: false, theme: "daily" },
+                { id: 3, korean: "행복", english: "Happiness", spanish: "Felicidad", koreanPhonetic: "/행복/", spanishPhonetic: "/feliθiˈðað/", status: "default", favorite: false, theme: "daily" },
+                { id: 4, korean: "꿈", english: "Dream", spanish: "Sueño", koreanPhonetic: "/꿈/", spanishPhonetic: "/ˈsweɲo/", status: "default", favorite: false, theme: "daily" },
+                { id: 5, korean: "시간", english: "Time", spanish: "Tiempo", koreanPhonetic: "/시간/", spanishPhonetic: "/ˈtjempo/", status: "default", favorite: false, theme: "daily" },
+                { id: 6, korean: "음악", english: "Music", spanish: "Música", koreanPhonetic: "/음악/", spanishPhonetic: "/ˈmusika/", status: "default", favorite: false, theme: "daily" },
+                // 旅行交通
+                { id: 7, korean: "비행기", english: "Airplane", spanish: "Avión", koreanPhonetic: "/비행기/", spanishPhonetic: "/aˈβjon/", status: "default", favorite: false, theme: "travel" },
+                { id: 8, korean: "기차", english: "Train", spanish: "Tren", koreanPhonetic: "/기차/", spanishPhonetic: "/tɾen/", status: "default", favorite: false, theme: "travel" },
+                { id: 9, korean: "버스", english: "Bus", spanish: "Autobús", koreanPhonetic: "/버스/", spanishPhonetic: "/awtoˈβus/", status: "default", favorite: false, theme: "travel" },
+                { id: 10, korean: "호텔", english: "Hotel", spanish: "Hotel", koreanPhonetic: "/호텔/", spanishPhonetic: "/oˈtel/", status: "default", favorite: false, theme: "travel" },
+                { id: 11, korean: "비자", english: "Visa", spanish: "Visa", koreanPhonetic: "/비자/", spanishPhonetic: "/ˈbisa/", status: "default", favorite: false, theme: "travel" },
+                { id: 12, korean: "지도", english: "Map", spanish: "Mapa", koreanPhonetic: "/지도/", spanishPhonetic: "/ˈmapa/", status: "default", favorite: false, theme: "travel" },
+                // 工作职场
+                { id: 13, korean: "회사", english: "Company", spanish: "Empresa", koreanPhonetic: "/회사/", spanishPhonetic: "/emˈpɾesa/", status: "default", favorite: false, theme: "work" },
+                { id: 14, korean: "직업", english: "Job", spanish: "Trabajo", koreanPhonetic: "/직업/", spanishPhonetic: "/tɾaˈβaxo/", status: "default", favorite: false, theme: "work" },
+                { id: 15, korean: "회의", english: "Meeting", spanish: "Reunión", koreanPhonetic: "/회의/", spanishPhonetic: "/re.uˈnjon/", status: "default", favorite: false, theme: "work" },
+                { id: 16, korean: "보고서", english: "Report", spanish: "Informe", koreanPhonetic: "/보고서/", spanishPhonetic: "/inˈfoɾme/", status: "default", favorite: false, theme: "work" },
+                { id: 17, korean: "마감일", english: "Deadline", spanish: "Fecha límite", koreanPhonetic: "/마감일/", spanishPhonetic: "/ˈfeʧa ˈlimite/", status: "default", favorite: false, theme: "work" },
+                { id: 18, korean: "승진", english: "Promotion", spanish: "Promoción", koreanPhonetic: "/승진/", spanishPhonetic: "/pɾomoˈθjon/", status: "default", favorite: false, theme: "work" }
+            ],
+            dailySentences: [
+                { korean: "삼은 용기 있는 믿음이거나, 아무것도 아니다.", english: "Life is either a daring adventure or nothing at all.", spanish: "La vida es una aventura valiente o nada en absoluto.", favorite: false, source: "海伦·凯勒（Helen Keller）- 英文名言", detail: "这句话鼓励我们勇敢面对生活，将每一刻都视为一次冒险。海伦·凯勒作为一位盲聋作家和演说家，通过自己的经历告诉我们，只有勇敢地探索和体验，生活才有意义。无论是学习新语言还是面对挑战，都应该以积极的态度去拥抱每一个机会。" },
+                { korean: "인생은 여행과 같다.", english: "Life is like a journey.", spanish: "La vida es como un viaje.", favorite: false, source: "中国谚语", detail: "人生就像一场旅行，重要的不是目的地，而是沿途的风景和看风景的心情。这句话提醒我们要珍惜生命中的每一个瞬间，享受学习和成长的过程。" },
+                { korean: "시간은 금이다.", english: "Time is money.", spanish: "El tiempo es oro.", favorite: false, source: "本杰明·富兰克林（Benjamin Franklin）- 英文名言", detail: "时间就是金钱，这句话强调了时间的宝贵性。在学习语言的过程中，合理利用时间，持之以恒地练习，才能取得显著的进步。" },
+                { korean: "행복은 작은 것들에서 온다.", english: "Happiness comes from small things.", spanish: "La felicidad viene de las cosas pequeñas.", favorite: false, source: "罗伯特·路易斯·史蒂文森（Robert Louis Stevenson）- 英文文学", detail: "幸福往往来自于生活中的小事情，比如学会一个新单词，理解一个语法点，或者用新语言与他人交流。这些小成就积累起来，会带来巨大的满足感。" },
+                { korean: "우리는 모두 별이다.", english: "We are all stars.", spanish: "Todos somos estrellas.", favorite: false, source: "卡尔·萨根（Carl Sagan）- 英文演讲", detail: "我们每个人都是独一无二的，就像夜空中的星星。学习语言不仅是掌握一种工具，更是发现自己潜力的过程，让我们在多元文化的天空中闪耀。" },
+                { korean: "사랑은 눈으로 보는 것이 아니라 마음으로 느끼는 것이다.", english: "Love is not seen with the eyes, but felt with the heart.", spanish: "El amor no se ve con los ojos, sino que se siente con el corazón.", favorite: false, source: "韩剧《来自星星的你》", detail: "这句话来自热门韩剧《来自星星的你》，强调了爱情是一种内心的感受，而不是表面的吸引。学习语言也需要用心去感受，而不仅仅是机械地记忆。" },
+                { korean: "인생은 자신이 만드는 것이다.", english: "Life is what you make it.", spanish: "La vida es lo que tú haces de ella.", favorite: false, source: "韩国文学《我的名字叫金三顺》", detail: "这句话来自韩国小说《我的名字叫金三顺》，强调了个人的努力和选择对人生的重要性。学习语言也是如此，通过不断的努力和实践，我们可以创造属于自己的语言能力。" },
+                { korean: "하루하루가 새로운 시작이다.", english: "Every day is a new beginning.", spanish: "Cada día es un nuevo comienzo.", favorite: false, source: "英文名言", detail: "这句话提醒我们每一天都是新的开始，无论过去如何，我们都可以重新出发。在语言学习中，每天都是一个学习新单词、新语法的机会。" },
+                { korean: "지식은 힘이다.", english: "Knowledge is power.", spanish: "El conocimiento es poder.", favorite: false, source: "弗朗西斯·培根（Francis Bacon）- 英文典籍", detail: "这句话出自英国哲学家弗朗西斯·培根，强调了知识的重要性。学习语言不仅是掌握一种交流工具，也是获取知识的途径。" },
+                { korean: "세상에는 두 종류의 사람이 있다. 하나는 일어나서 세상을 바꾸는 사람이고, 다른 하나는 세상이 변하는 것을 지켜보는 사람이다.", english: "There are two types of people in the world: those who get up and change the world, and those who get up and watch the world change.", spanish: "Hay dos tipos de personas en el mundo: los que se levantan y cambian el mundo, y los que se levantan y observan cómo cambia el mundo.", favorite: false, source: "西班牙文学《百年孤独》", detail: "这句话来自加西亚·马尔克斯的《百年孤独》，提醒我们要积极参与生活，而不是被动地观察。学习语言也是如此，只有积极实践才能真正掌握。" }
+            ],
+            grammar: [
+                { id: 1, title: "Present Tense", korean: "나는 매일 아침 커피를 마셔요 (I drink coffee every morning)", english: "I drink coffee every morning", spanish: "Yo tomo café todas las mañanas", usage: "Used to express actions that are happening now or habitual actions", status: "default", favorite: false },
+                { id: 2, title: "Past Tense", korean: "어제 친구와 영화를 보았어요 (I watched a movie with friends yesterday)", english: "I watched a movie with friends yesterday", spanish: "Vi una película con amigos ayer", usage: "Used to express actions that happened in the past", status: "default", favorite: false },
+                { id: 3, title: "Future Tense", korean: "내일 한국어 공부를 더 열심히 할 거예요 (I will study Korean harder tomorrow)", english: "I will study Korean harder tomorrow", spanish: "Estudiaré coreano más duro mañana", usage: "Used to express actions that will happen in the future", status: "default", favorite: false },
+                { id: 4, title: "Present Continuous", korean: "지금 인터넷으로 스페인어를 배우고 있어요 (I am learning Spanish online now)", english: "I am learning Spanish online now", spanish: "Estoy aprendiendo español en línea ahora", usage: "Used to express actions that are currently in progress", status: "default", favorite: false },
+                { id: 5, title: "Complex Sentences", korean: "비가 오는 날에는 집에서 책을 읽고 음악을 듣는 것이 좋아요 (On rainy days, I like to read books and listen to music at home)", english: "On rainy days, I like to read books and listen to music at home", spanish: "En los días de lluvia, me gusta leer libros y escuchar música en casa", usage: "Used to express complex ideas with multiple clauses", status: "default", favorite: false }
+            ]
+        };
+
+        // 当前状态
+        let currentFilter = "all";
+        let currentSearch = "";
+        let currentDailyIndex = 0;
+        let currentTheme = "all";
+        let currentGrammarIndex = 0;
+        let currentLanguage = "english";
+        let displayedWords = [];
+        
+        // 用户状态
+        let isLoggedIn = false;
+        let currentUser = {
+            nickname: "User",
+            status: "Learning languages",
+            phone: "",
+            email: "",
+            loginDays: 0,
+            learnedWords: 0,
+            lastLogin: null
+        };
+
+        // DOM元素
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const refreshDaily = document.getElementById('refreshDaily');
+        const favoriteDaily = document.getElementById('favoriteDaily');
+        const moreDaily = document.getElementById('moreDaily');
+        const dailySentence = document.getElementById('dailySentence');
+        const dailyDetails = document.getElementById('dailyDetails');
+        const contentGrid = document.getElementById('contentGrid');
+        const userProfileBtn = document.getElementById('userProfileBtn');
+        const loginModal = document.getElementById('loginModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        const themeButtons = document.querySelectorAll('.theme-btn');
+        const languageButtons = document.querySelectorAll('.language-btn');
+        const refreshGrammar = document.getElementById('refreshGrammar');
+        
+        // 登录/注册相关元素
+        const authModalTitle = document.getElementById('authModalTitle');
+        const authModalSubtitle = document.getElementById('authModalSubtitle');
+        const authMethods = document.getElementById('authMethods');
+        const toggleAuthMode = document.getElementById('toggleAuthMode');
+        const authMethodBtns = document.querySelectorAll('.auth-method');
+        
+        // 个人主页相关元素
+        const profileModal = document.getElementById('profileModal');
+        const closeProfileModal = document.getElementById('closeProfileModal');
+        const profileNickname = document.getElementById('profileNickname');
+        const profileStatus = document.getElementById('profileStatus');
+        const profilePhone = document.getElementById('profilePhone');
+        const profileEmail = document.getElementById('profileEmail');
+        const loginDays = document.getElementById('loginDays');
+        const learnedWords = document.getElementById('learnedWords');
+        const saveProfile = document.getElementById('saveProfile');
+        const changeAvatar = document.getElementById('changeAvatar');
+
+        // 辅助函数：切换卡片操作选项
+        function toggleCardActions(card, actionsClass) {
+            const actions = card.querySelector(actionsClass);
+            if (actions.classList.contains('hidden')) {
+                actions.classList.remove('hidden');
+                setTimeout(() => {
+                    actions.classList.remove('translate-x-full');
+                }, 10);
+            } else {
+                actions.classList.add('translate-x-full');
+                setTimeout(() => {
+                    actions.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // 辅助函数：生成语言内容
+        function generateLanguageContent(item) {
+            const languageConfig = {
+                english: {
+                    main: item.english,
+                    sec1: { label: 'Korean', text: item.korean, phonetic: item.koreanPhonetic },
+                    sec2: { label: 'Spanish', text: item.spanish, phonetic: item.spanishPhonetic }
+                },
+                korean: {
+                    main: item.korean,
+                    sec1: { label: 'English', text: item.english, phonetic: 'English' },
+                    sec2: { label: 'Spanish', text: item.spanish, phonetic: item.spanishPhonetic }
+                },
+                spanish: {
+                    main: item.spanish,
+                    sec1: { label: 'English', text: item.english, phonetic: 'English' },
+                    sec2: { label: 'Korean', text: item.korean, phonetic: item.koreanPhonetic }
+                }
+            };
+
+            const config = languageConfig[currentLanguage];
+            
+            return `
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-medium text-neutral-800">${config.main}</h3>
+                    <button class="play-audio text-primary hover:text-primary/80" data-item-id="${item.id}">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <div class="space-y-2">
+                    <div>
+                        <p class="text-sm text-neutral-600">${config.sec1.label}: ${config.sec1.text}</p>
+                        <p class="text-xs text-neutral-500">${config.sec1.phonetic}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">${config.sec2.label}: ${config.sec2.text}</p>
+                        <p class="text-xs text-neutral-500">${config.sec2.phonetic}</p>
+                    </div>
+                </div>
+                <p class="mt-2">
+                    <button class="word-more text-primary text-xs hover:underline" data-item-id="${item.id}">more</button>
+                </p>
+                <div class="word-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
+                    ${getWordDetails(item.id)}
+                </div>
+            `;
+        }
+
+        // 初始化
+        function init() {
+            renderContent();
+            updateDailySentence();
+            updateGrammarCard();
+            
+            // 搜索功能
+            searchInput.addEventListener('input', handleSearch);
+            searchBtn.addEventListener('click', handleSearch);
+            
+            // 每日一句刷新
+            refreshDaily.addEventListener('click', () => {
+                currentDailyIndex = (currentDailyIndex + 1) % data.dailySentences.length;
+                updateDailySentence();
+            });
+            
+            // 每日一句收藏
+            favoriteDaily.addEventListener('click', () => {
+                const sentence = data.dailySentences[currentDailyIndex];
+                sentence.favorite = !sentence.favorite;
+                updateDailySentence();
+            });
+            
+            // 每日一句详情
+            moreDaily.addEventListener('click', () => {
+                dailyDetails.classList.toggle('hidden');
+            });
+            
+            // 语法卡片刷新
+            refreshGrammar.addEventListener('click', () => {
+                currentGrammarIndex = (currentGrammarIndex + 1) % data.grammar.length;
+                updateGrammarCard();
+                // 隐藏所有语法卡片的操作选项
+                document.querySelectorAll('.grammar-actions').forEach(actions => {
+                    actions.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        actions.classList.add('hidden');
+                    }, 300);
+                });
+            });
+            
+            // 筛选功能
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchFilter(btn.dataset.filter);
+                });
+            });
+            
+            // 主题选择功能
+            themeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchTheme(btn.dataset.theme);
+                    // 更新主题按钮样式
+                    themeButtons.forEach(b => {
+                        b.classList.remove('bg-primary/10', 'text-primary');
+                        b.classList.add('bg-neutral-200', 'text-neutral-700');
+                    });
+                    btn.classList.remove('bg-neutral-200', 'text-neutral-700');
+                    btn.classList.add('bg-primary/10', 'text-primary');
+                });
+            });
+            
+            // 语言选择功能
+            languageButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentLanguage = btn.dataset.language;
+                    renderContent();
+                    updateGrammarCard();
+                    // 更新语言按钮样式
+                    languageButtons.forEach(b => {
+                        b.classList.remove('bg-white/40');
+                        b.classList.add('bg-white/20');
+                    });
+                    btn.classList.remove('bg-white/20');
+                    btn.classList.add('bg-white/40');
+                });
+            });
+            
+            // 登录模态框
+            userProfileBtn.addEventListener('click', () => {
+                if (isLoggedIn) {
+                    openProfileModal();
+                } else {
+                    loginModal.classList.remove('hidden');
+                }
+            });
+            
+            closeLoginModal.addEventListener('click', () => {
+                loginModal.classList.add('hidden');
+            });
+            
+            // 点击模态框外部关闭
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.classList.add('hidden');
+                }
+            });
+            
+            // 切换登录/注册模式
+            toggleAuthMode.addEventListener('click', () => {
+                if (authModalTitle.textContent === 'User Login') {
+                    authModalTitle.textContent = 'User Register';
+                    authModalSubtitle.textContent = 'Choose Register Method';
+                    authMethodBtns.forEach(btn => {
+                        btn.querySelector('span').textContent = btn.querySelector('span').textContent.replace('Login', 'Register');
+                    });
+                    toggleAuthMode.textContent = 'Switch to Login';
+                } else {
+                    authModalTitle.textContent = 'User Login';
+                    authModalSubtitle.textContent = 'Choose Login Method';
+                    authMethodBtns.forEach(btn => {
+                        btn.querySelector('span').textContent = btn.querySelector('span').textContent.replace('Register', 'Login');
+                    });
+                    toggleAuthMode.textContent = 'Switch to Register';
+                }
+            });
+            
+            // 认证方法点击
+            authMethodBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const method = btn.dataset.method;
+                    const isRegister = authModalTitle.textContent === 'User Register';
+                    handleAuth(method, isRegister);
+                });
+            });
+            
+            // 个人主页模态框
+            closeProfileModal.addEventListener('click', () => {
+                profileModal.classList.add('hidden');
+            });
+            
+            // 点击模态框外部关闭
+            profileModal.addEventListener('click', (e) => {
+                if (e.target === profileModal) {
+                    profileModal.classList.add('hidden');
+                }
+            });
+            
+            // 保存个人资料
+            saveProfile.addEventListener('click', saveUserProfile);
+            
+            // 更改头像
+            changeAvatar.addEventListener('click', () => {
+                // 这里可以添加更改头像的逻辑
+                alert('Avatar change functionality would be implemented here');
+            });
+            
+            // 卡片交互
+            document.addEventListener('click', (e) => {
+                // 单词卡片点击 - 显示/隐藏操作选项
+                if (e.target.closest('.card-content') && !e.target.closest('.word-more')) {
+                    const card = e.target.closest('[data-item-id]');
+                    toggleCardActions(card, '.card-actions');
+                }
+                
+                // 语法卡片点击 - 显示/隐藏操作选项
+                if (e.target.closest('.grammar-content') && !e.target.closest('.grammar-more')) {
+                    const card = e.target.closest('.grammar-card');
+                    toggleCardActions(card, '.grammar-actions');
+                }
+                
+                // 播放音频
+                if (e.target.closest('.play-audio')) {
+                    const btn = e.target.closest('.play-audio');
+                    const id = parseInt(btn.dataset.itemId);
+                    playAudio(id);
+                }
+                
+                // 标记单词为已学习
+                if (e.target.closest('.mark-learned')) {
+                    const btn = e.target.closest('.mark-learned');
+                    const id = parseInt(btn.dataset.itemId);
+                    markAsLearned(id);
+                }
+                
+                // 添加单词到复习列表
+                if (e.target.closest('.mark-review')) {
+                    const btn = e.target.closest('.mark-review');
+                    const id = parseInt(btn.dataset.itemId);
+                    addToReview(id);
+                }
+                
+                // 收藏/取消收藏单词
+                if (e.target.closest('.mark-favorite')) {
+                    const btn = e.target.closest('.mark-favorite');
+                    const id = parseInt(btn.dataset.itemId);
+                    toggleFavorite(id, btn);
+                }
+                
+                // 显示/隐藏单词详细信息
+                if (e.target.closest('.word-more')) {
+                    const btn = e.target.closest('.word-more');
+                    const card = btn.closest('.card-content');
+                    const details = card.querySelector('.word-details');
+                    details.classList.toggle('hidden');
+                }
+                
+                // 显示/隐藏语法详细信息
+                if (e.target.closest('.grammar-more')) {
+                    const btn = e.target.closest('.grammar-more');
+                    const details = btn.nextElementSibling;
+                    details.classList.toggle('hidden');
+                }
+                
+                // 标记语法为已学习
+                if (e.target.closest('.mark-grammar-learned')) {
+                    const btn = e.target.closest('.mark-grammar-learned');
+                    const index = parseInt(btn.dataset.grammarIndex);
+                    const grammar = data.grammar[index];
+                    grammar.status = 'learned';
+                    updateGrammarCard();
+                }
+                
+                // 添加语法到复习列表
+                if (e.target.closest('.mark-grammar-review')) {
+                    const btn = e.target.closest('.mark-grammar-review');
+                    const index = parseInt(btn.dataset.grammarIndex);
+                    const grammar = data.grammar[index];
+                    grammar.status = 'review';
+                    updateGrammarCard();
+                }
+                
+                // 收藏/取消收藏语法
+                if (e.target.closest('.mark-grammar-favorite')) {
+                    const btn = e.target.closest('.mark-grammar-favorite');
+                    const index = parseInt(btn.dataset.grammarIndex);
+                    const grammar = data.grammar[index];
+                    grammar.favorite = !grammar.favorite;
+                    updateGrammarCard();
+                }
+                
+                // 播放Daily Whisper读音
+                if (e.target.closest('.play-daily-audio')) {
+                    playDailyAudio();
+                }
+                
+                // 播放语法读音
+                if (e.target.closest('.play-grammar-audio')) {
+                    const btn = e.target.closest('.play-grammar-audio');
+                    const index = parseInt(btn.dataset.grammarIndex);
+                    playGrammarAudio(index);
+                }
+            });
+        }
+        
+        // 处理认证
+        function handleAuth(method, isRegister) {
+            // 模拟认证过程
+            setTimeout(() => {
+                isLoggedIn = true;
+                
+                // 更新用户信息
+                if (isRegister) {
+                    // 注册新用户
+                    currentUser = {
+                        nickname: "New User",
+                        status: "Learning languages",
+                        phone: "",
+                        email: "",
+                        loginDays: 1,
+                        learnedWords: 0,
+                        lastLogin: new Date()
+                    };
+                } else {
+                    // 登录现有用户
+                    currentUser = {
+                        nickname: "User",
+                        status: "Learning languages",
+                        phone: "",
+                        email: "",
+                        loginDays: 5,
+                        learnedWords: 20,
+                        lastLogin: new Date()
+                    };
+                }
+                
+                // 关闭登录模态框
+                loginModal.classList.add('hidden');
+                
+                // 打开个人主页
+                openProfileModal();
+            }, 1000);
+        }
+        
+        // 打开个人主页
+        function openProfileModal() {
+            // 更新个人资料
+            profileNickname.value = currentUser.nickname;
+            profileStatus.value = currentUser.status;
+            profilePhone.value = currentUser.phone;
+            profileEmail.value = currentUser.email;
+            loginDays.textContent = currentUser.loginDays;
+            learnedWords.textContent = currentUser.learnedWords;
+            
+            // 显示个人主页
+            profileModal.classList.remove('hidden');
+        }
+        
+        // 保存个人资料
+        function saveUserProfile() {
+            // 更新用户信息
+            currentUser.nickname = profileNickname.value;
+            currentUser.status = profileStatus.value;
+            currentUser.phone = profilePhone.value;
+            currentUser.email = profileEmail.value;
+            
+            // 显示保存成功
+            alert('Profile saved successfully!');
+            
+            // 关闭个人主页
+            profileModal.classList.add('hidden');
+        }
+        
+        // 播放Daily Whisper读音
+        function playDailyAudio() {
+            const sentence = data.dailySentences[currentDailyIndex];
+            let textToSpeak = sentence.english;
+            
+            if (currentLanguage === 'korean') {
+                textToSpeak = sentence.korean;
+            } else if (currentLanguage === 'spanish') {
+                textToSpeak = sentence.spanish;
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            speechSynthesis.speak(utterance);
+        }
+        
+        // 播放语法读音
+        function playGrammarAudio(index) {
+            const grammar = data.grammar[index];
+            let textToSpeak = grammar.english;
+            
+            if (currentLanguage === 'korean') {
+                textToSpeak = grammar.korean.split(' ')[0]; // 只取韩语部分
+            } else if (currentLanguage === 'spanish') {
+                textToSpeak = grammar.spanish;
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            speechSynthesis.speak(utterance);
+        }
+
+        // 更新每日一句
+        function updateDailySentence() {
+            const sentence = data.dailySentences[currentDailyIndex];
+            dailySentence.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <p class="text-neutral-700 text-sm">${sentence.korean}</p>
+                    <button class="play-daily-audio text-primary hover:text-primary/80 text-sm">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <p class="text-neutral-700 text-sm">"${sentence.english}</p>
+                <p class="text-neutral-700 text-sm">"${sentence.spanish}</p>
+                <p class="mt-2">
+                    <button id="moreDaily" class="text-primary text-xs hover:underline">more</button>
+                </p>
+            `;
+            // 更新详细信息
+            dailyDetails.innerHTML = `
+                <p><strong>出处：</strong>${sentence.source}</p>
+                <p class="mt-1"><strong>详细说明：</strong>${sentence.detail}</p>
+            `;
+            // 隐藏详细信息
+            dailyDetails.classList.add('hidden');
+            // 更新爱心按钮状态
+            const icon = favoriteDaily.querySelector('i');
+            if (sentence.favorite) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                favoriteDaily.classList.add('text-red-500');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                favoriteDaily.classList.remove('text-red-500');
+            }
+            // 重新绑定事件
+            document.getElementById('moreDaily').addEventListener('click', () => {
+                dailyDetails.classList.toggle('hidden');
+            });
+            // 重新绑定播放按钮事件
+            document.querySelector('.play-daily-audio').addEventListener('click', playDailyAudio);
+        }
+
+        // 更新语法卡片
+        function updateGrammarCard() {
+            // 更新第一张语法卡片
+            const grammar1 = data.grammar[currentGrammarIndex];
+            document.getElementById('grammarTitle1').textContent = grammar1.title;
+            document.getElementById('grammarContent1').innerHTML = `
+                <p><strong>Korean:</strong> ${grammar1.korean}</p>
+                <p><strong>English:</strong> ${grammar1.english}</p>
+                <p><strong>Spanish:</strong> ${grammar1.spanish}</p>
+                <p class="text-xs text-neutral-500 mt-2">${grammar1.usage}</p>
+                <p class="mt-2">
+                    <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="${currentGrammarIndex}">more</button>
+                </p>
+                <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
+                    ${getGrammarDetails(currentGrammarIndex)}
+                </div>
+            `;
+            
+            // 更新第二张语法卡片
+            const nextIndex = (currentGrammarIndex + 1) % data.grammar.length;
+            const grammar2 = data.grammar[nextIndex];
+            document.getElementById('grammarTitle2').textContent = grammar2.title;
+            document.getElementById('grammarContent2').innerHTML = `
+                <p><strong>Korean:</strong> ${grammar2.korean}</p>
+                <p><strong>English:</strong> ${grammar2.english}</p>
+                <p><strong>Spanish:</strong> ${grammar2.spanish}</p>
+                <p class="text-xs text-neutral-500 mt-2">${grammar2.usage}</p>
+                <p class="mt-2">
+                    <button class="grammar-more text-primary text-xs hover:underline" data-grammar-index="${nextIndex}">more</button>
+                </p>
+                <div class="grammar-details hidden mt-3 pt-3 border-t border-neutral-200 text-sm text-neutral-700">
+                    ${getGrammarDetails(nextIndex)}
+                </div>
+            `;
+            
+            // 更新语法卡片操作按钮
+            const favoriteBtns = document.querySelectorAll('.mark-grammar-favorite');
+            favoriteBtns.forEach((btn, index) => {
+                const grammar = data.grammar[(currentGrammarIndex + index) % data.grammar.length];
+                const icon = btn.querySelector('i');
+                if (grammar.favorite) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    btn.innerHTML = `<i class="fas fa-heart mr-1"></i> Remove from Favorites`;
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    btn.innerHTML = `<i class="far fa-heart mr-1"></i> Add to Favorites`;
+                }
+            });
+        }
+
+        // 切换筛选
+        function switchFilter(filter) {
+            currentFilter = filter;
+            renderContent();
+        }
+
+        // 搜索处理
+        function handleSearch() {
+            currentSearch = searchInput.value.toLowerCase();
+            renderContent();
+        }
+
+        // 切换主题
+        function switchTheme(theme) {
+            currentTheme = theme;
+            displayedWords = [];
+            renderContent();
+        }
+
+        // 渲染内容 - 单个卡片显示三种语言
+        function renderContent() {
+            let content = [];
+            
+            // 筛选模式下，显示所有类型的标记内容
+            if (currentFilter !== 'all') {
+                // 添加标记的单词
+                let words = data.words.filter(item => {
+                    if (currentFilter === 'review') return item.status === 'review';
+                    if (currentFilter === 'favorite') return item.favorite;
+                    return item.status !== 'default'; // MY Learning 显示所有标记过的
+                });
+                
+                // 添加标记的语法
+                let grammar = data.grammar.filter(item => {
+                    if (currentFilter === 'review') return item.status === 'review';
+                    if (currentFilter === 'favorite') return item.favorite;
+                    return item.status !== 'default'; // MY Learning 显示所有标记过的
+                });
+                
+                // 添加标记的每日一句
+                let sentences = data.dailySentences.filter(item => {
+                    if (currentFilter === 'favorite') return item.favorite;
+                    return false; // 每日一句只有收藏状态
+                });
+                
+                // 合并所有内容
+                content = [...words, ...grammar.map(g => ({ ...g, type: 'grammar' })), ...sentences.map(s => ({ ...s, type: 'sentence' }))];
+            } else {
+                // 非筛选模式下，只显示未标记的单词
+                content = data.words.filter(item => item.status === 'default');
+                
+                // 主题过滤
+                if (currentTheme !== 'all') {
+                    content = content.filter(item => item.theme === currentTheme);
+                }
+                
+                // 搜索
+                if (currentSearch) {
+                    content = content.filter(item => {
+                        return item.korean.toLowerCase().includes(currentSearch) || 
+                               item.english.toLowerCase().includes(currentSearch) || 
+                               item.spanish.toLowerCase().includes(currentSearch);
+                    });
+                }
+                
+                // 随机选择6个单词
+                const shuffled = [...content].sort(() => 0.5 - Math.random());
+                content = shuffled.slice(0, 6);
+                displayedWords = content.map(item => item.id);
+            }
+            
+            // 清空网格
+            contentGrid.innerHTML = '';
+            
+            // 为每个内容生成卡片
+            content.forEach(item => {
+                let card = '';
+                
+                if (item.type === 'grammar') {
+                    // 语法卡片
+                    card = `
+                        <div class="bg-white rounded-md shadow-sm p-4 card-hover">
+                            <div class="grammar-content">
+                                <h3 class="text-base font-medium text-neutral-800 mb-2">${item.title}</h3>
+                                <div class="space-y-2 text-sm text-neutral-700">
+                                    <p><strong>Korean:</strong> ${item.korean}</p>
+                                    <p><strong>English:</strong> ${item.english}</p>
+                                    <p><strong>Spanish:</strong> ${item.spanish}</p>
+                                    <p class="text-xs text-neutral-500 mt-2">${item.usage}</p>
+                                </div>
+                            </div>
+                            <div class="grammar-actions hidden mt-3 pt-3 border-t border-neutral-200 space-y-2">
+                                <button class="mark-grammar-learned w-full py-1.5 px-3 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors">
+                                    <i class="fas fa-check mr-1"></i> Mark as Learned
+                                </button>
+                                <button class="mark-grammar-review w-full py-1.5 px-3 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 transition-colors">
+                                    <i class="fas fa-clock mr-1"></i> Add to Review
+                                </button>
+                                <button class="mark-grammar-favorite w-full py-1.5 px-3 bg-red-100 text-red-500 rounded-md text-sm hover:bg-red-200 transition-colors">
+                                    <i class="${item.favorite ? 'fas' : 'far'} fa-heart mr-1"></i> ${item.favorite ? 'Remove from' : 'Add to'} Favorites
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else if (item.type === 'sentence') {
+                    // 每日一句卡片
+                    card = `
+                        <div class="bg-white rounded-md shadow-sm p-4 card-hover">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-base font-medium text-neutral-800">Daily Whisper</h3>
+                                <button class="text-red-500">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                            <div class="space-y-1 text-sm text-neutral-700">
+                                <p>${item.korean}</p>
+                                <p>"${item.english}</p>
+                                <p>"${item.spanish}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 生成语言内容
+                    const languageContent = generateLanguageContent(item);
+                    
+                    // 单词卡片
+                    card = `
+                        <div class="bg-white rounded-md shadow-sm p-4 card-hover relative overflow-hidden" data-item-id="${item.id}">
+                            <!-- 单词内容 -->
+                            <div class="card-content">
+                                ${languageContent}
+                            </div>
+                            <!-- 操作选项 -->
+                            <div class="card-actions hidden absolute top-0 right-0 h-full w-48 bg-white shadow-lg p-4 space-y-2 transform translate-x-full transition-transform duration-300">
+                                <button class="mark-learned w-full py-1.5 px-3 bg-primary/10 text-primary rounded-md text-sm hover:bg-primary/20 transition-colors" data-item-id="${item.id}">
+                                    <i class="fas fa-check mr-1"></i> Mark as Learned
+                                </button>
+                                <button class="mark-review w-full py-1.5 px-3 bg-yellow-100 text-yellow-700 rounded-md text-sm hover:bg-yellow-200 transition-colors" data-item-id="${item.id}">
+                                    <i class="fas fa-clock mr-1"></i> Add to Review
+                                </button>
+                                <button class="mark-favorite w-full py-1.5 px-3 bg-red-100 text-red-500 rounded-md text-sm hover:bg-red-200 transition-colors" data-item-id="${item.id}">
+                                    <i class="${item.favorite ? 'fas' : 'far'} fa-heart mr-1"></i> ${item.favorite ? 'Remove from' : 'Add to'} Favorites
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                contentGrid.innerHTML += card;
+            });
+        }
+
+        // 切换收藏状态
+        function toggleFavorite(id, btn) {
+            const item = data.words.find(i => i.id === id);
+            if (item) {
+                item.favorite = !item.favorite;
+                // 更新该单词的收藏按钮
+                const icon = btn.querySelector('i');
+                if (item.favorite) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                }
+                btn.innerHTML = `<i class="${item.favorite ? 'fas' : 'far'} fa-heart mr-1"></i> ${item.favorite ? 'Remove from' : 'Add to'} Favorites`;
+            }
+        }
+
+        // 检查是否需要自动刷新
+        function checkAutoRefresh() {
+            if (currentFilter === 'all' && displayedWords.length > 0) {
+                const allMarked = displayedWords.every(id => {
+                    const item = data.words.find(i => i.id === id);
+                    return item && item.status !== 'default';
+                });
+                if (allMarked) {
+                    setTimeout(() => {
+                        renderContent();
+                    }, 500);
+                }
+            }
+        }
+
+        // 标记为已学习
+        function markAsLearned(id) {
+            const item = data.words.find(i => i.id === id);
+            if (item) {
+                item.status = 'learned';
+                renderContent();
+                checkAutoRefresh();
+            }
+        }
+
+        // 添加到复习列表
+        function addToReview(id) {
+            const item = data.words.find(i => i.id === id);
+            if (item) {
+                item.status = 'review';
+                renderContent();
+                checkAutoRefresh();
+            }
+        }
+
+        // 获取单词详细信息
+        function getWordDetails(id) {
+            const wordDetails = {
+                1: {
+                    english: "Hello - 用于向某人打招呼的常用问候语。",
+                    korean: "안녕하세요 - 韩国最常用的问候语，用于正式和非正式场合。",
+                    spanish: "Hola - 西班牙语中最常用的问候语，适用于各种场合。"
+                },
+                2: {
+                    english: "Love - 一种强烈的深厚感情。",
+                    korean: "사랑 - 表示对某人或某物的深切爱意和情感。",
+                    spanish: "Amor - 西班牙语中表示爱的词汇，可用于亲情、友情和爱情。"
+                },
+                3: {
+                    english: "Happiness - 快乐或满足的状态。",
+                    korean: "행복 - 指内心的满足和快乐的状态。",
+                    spanish: "Felicidad - 西班牙语中表示幸福和快乐的词汇。"
+                },
+                4: {
+                    english: "Dream - 人在睡眠时脑海中出现的一系列想法、图像和感觉。",
+                    korean: "꿈 - 睡眠时出现的幻象，也可指人生的理想和目标。",
+                    spanish: "Sueño - 西班牙语中表示梦境或理想的词汇。"
+                },
+                5: {
+                    english: "Time - 存在和事件在过去、现在和未来的无限持续进展。",
+                    korean: "시간 - 表示时间的流逝和时刻。",
+                    spanish: "Tiempo - 西班牙语中表示时间的词汇。"
+                },
+                6: {
+                    english: "Music - 人声或乐器声音（或两者）的组合，产生形式美、和谐和情感表达。",
+                    korean: "음악 - 通过声音表达情感和思想的艺术形式。",
+                    spanish: "Música - 西班牙语中表示音乐的词汇。"
+                },
+                7: {
+                    english: "Airplane - 一种有固定机翼且重量大于它所排开的空气的动力飞行器。",
+                    korean: "비행기 - 在空中飞行的交通工具。",
+                    spanish: "Avión - 西班牙语中表示飞机的词汇。"
+                },
+                8: {
+                    english: "Train - 由一个或多个机车牵引或推动的一列连接的铁路车辆。",
+                    korean: "기차 - 在铁轨上行驶的交通工具。",
+                    spanish: "Tren - 西班牙语中表示火车的词汇。"
+                },
+                9: {
+                    english: "Bus - 一种大型机动车辆，通过公路载运乘客，通常是为公众服务的固定路线和票价。",
+                    korean: "버스 - 城市公共交通工具。",
+                    spanish: "Autobús - 西班牙语中表示公共汽车的词汇。"
+                },
+                10: {
+                    english: "Hotel - 为旅行者和游客提供住宿、餐饮和其他服务的场所。",
+                    korean: "호텔 - 提供住宿和相关服务的场所。",
+                    spanish: "Hotel - 西班牙语中表示酒店的词汇。"
+                },
+                11: {
+                    english: "Visa - 护照上的签注，表示持有人被允许进入、离开或在一个国家停留指定的时间。",
+                    korean: "비자 - 允许外国人进入本国的官方文件。",
+                    spanish: "Visa - 西班牙语中表示签证的词汇。"
+                },
+                12: {
+                    english: "Map - 显示陆地或海洋区域的物理特征、城市、道路等的图表表示。",
+                    korean: "지도 - 显示地理信息的图表。",
+                    spanish: "Mapa - 西班牙语中表示地图的词汇。"
+                },
+                13: {
+                    english: "Company - 商业企业。",
+                    korean: "회사 - 从事商业活动的组织。",
+                    spanish: "Empresa - 西班牙语中表示公司的词汇。"
+                },
+                14: {
+                    english: "Job - 有固定报酬的工作职位。",
+                    korean: "직업 - 个人从事的工作或职业。",
+                    spanish: "Trabajo - 西班牙语中表示工作的词汇。"
+                },
+                15: {
+                    english: "Meeting - 人们为特定目的（尤其是正式讨论）而举行的集会。",
+                    korean: "회의 - 为讨论特定事项而举行的会议。",
+                    spanish: "Reunión - 西班牙语中表示会议的词汇。"
+                },
+                16: {
+                    english: "Report - 关于事件或情况的书面报告。",
+                    korean: "보고서 - 关于特定主题的书面报告。",
+                    spanish: "Informe - 西班牙语中表示报告的词汇。"
+                },
+                17: {
+                    english: "Deadline - 某事物应该完成的最晚时间或日期。",
+                    korean: "마감일 - 任务或项目必须完成的最后期限。",
+                    spanish: "Fecha límite - 西班牙语中表示截止日期的词汇。"
+                },
+                18: {
+                    english: "Promotion - 将某人或某物提升到更高职位或等级的行为，或被提升的事实。",
+                    korean: "승진 - 在工作或社会地位上的晋升。",
+                    spanish: "Promoción - 西班牙语中表示晋升的词汇。"
+                }
+            };
+            
+            const details = wordDetails[id];
+            if (!details) return "No details available.";
+            
+            return `
+                <div class="space-y-2">
+                    <p><strong>英语：</strong>${details.english}</p>
+                    <p><strong>韩语：</strong>${details.korean}</p>
+                    <p><strong>西班牙语：</strong>${details.spanish}</p>
+                </div>
+            `;
+        }
+
+        // 获取语法详细信息
+        function getGrammarDetails(index) {
+            const grammarDetails = [
+                {
+                    english: "现在时表示正在发生的动作或习惯性动作。在英语中，动词用原形（第三人称单数加s）。",
+                    korean: "韩语现在时通常以'아요/어요'结尾，表示现在正在进行的动作或习惯性动作。",
+                    spanish: "西班牙语现在时根据主语的不同，动词有不同的变位形式。",
+                    examples: [
+                        "英语：I eat breakfast every morning.（我每天早上吃早餐。）",
+                        "韩语：나는 매일 아침 밥을 먹어요.（我每天早上吃早餐。）",
+                        "西班牙语：Yo como desayuno todas las mañanas.（我每天早上吃早餐。）"
+                    ]
+                },
+                {
+                    english: "过去时表示过去发生的动作。在英语中，规则动词加ed，不规则动词有特殊变化。",
+                    korean: "韩语过去时通常以'았어요/었어요'结尾，表示过去发生的动作。",
+                    spanish: "西班牙语过去时有两种：简单过去时和过去未完成时，分别表示不同类型的过去动作。",
+                    examples: [
+                        "英语：I ate dinner yesterday.（我昨天吃了晚饭。）",
+                        "韩语：나는 어제 저녁을 먹었어요.（我昨天吃了晚饭。）",
+                        "西班牙语：Yo comí la cena ayer.（我昨天吃了晚饭。）"
+                    ]
+                },
+                {
+                    english: "将来时表示将来要发生的动作。在英语中，通常用will或be going to表示。",
+                    korean: "韩语将来时通常以'을 거예요/할 거예요'结尾，表示将来要发生的动作。",
+                    spanish: "西班牙语将来时有两种：简单将来时和ir + a + 动词原形，表示将来要发生的动作。",
+                    examples: [
+                        "英语：I will eat lunch tomorrow.（我明天吃午饭。）",
+                        "韩语：나는 내일 점심을 먹을 거예요.（我明天吃午饭。）",
+                        "西班牙语：Yo comeré al mediodía mañana.（我明天吃午饭。）"
+                    ]
+                },
+                {
+                    english: "现在进行时表示现在正在进行的动作。在英语中，用be动词加动词的现在分词形式。",
+                    korean: "韩语现在进行时通常以'고 있어요'结尾，表示现在正在进行的动作。",
+                    spanish: "西班牙语现在进行时用estar加动词的现在分词形式，表示现在正在进行的动作。",
+                    examples: [
+                        "英语：I am eating now.（我现在正在吃饭。）",
+                        "韩语：나는 지금 먹고 있어요.（我现在正在吃饭。）",
+                        "西班牙语：Estoy comiendo ahora.（我现在正在吃饭。）"
+                    ]
+                },
+                {
+                    english: "复合句包含多个分句，表达更复杂的思想。在英语中，复合句通常由主句和从句组成，通过连接词连接。",
+                    korean: "韩语复合句通过各种连接词和语法结构来表达复杂的思想，如条件句、原因句等。",
+                    spanish: "西班牙语复合句由主句和一个或多个从句组成，通过连接词连接，表达复杂的逻辑关系。",
+                    examples: [
+                        "英语：When it rains, I stay at home and read books.（下雨的时候，我待在家里看书。）",
+                        "韩语：비가 올 때는 집에 있으면서 책을 읽어요.（下雨的时候，我待在家里看书。）",
+                        "西班牙语：Cuando llueve, me quedo en casa y leo libros.（下雨的时候，我待在家里看书。）"
+                    ]
+                }
+            ];
+            
+            const details = grammarDetails[index];
+            if (!details) return "No details available.";
+            
+            let grammarExplanation = '';
+            let example = '';
+            
+            if (currentLanguage === 'english') {
+                grammarExplanation = `<p><strong>英语语法：</strong>${details.english}</p>`;
+                example = details.examples[0];
+            } else if (currentLanguage === 'korean') {
+                grammarExplanation = `<p><strong>韩语语法：</strong>${details.korean}</p>`;
+                example = details.examples[1];
+            } else if (currentLanguage === 'spanish') {
+                grammarExplanation = `<p><strong>西班牙语语法：</strong>${details.spanish}</p>`;
+                example = details.examples[2];
+            }
+            
+            return `
+                <div class="space-y-2">
+                    ${grammarExplanation}
+                    <div class="mt-2">
+                        <p><strong>例句：</strong></p>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>${example}</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 播放读音
+        function playAudio(id) {
+            const item = data.words.find(i => i.id === id);
+            if (item) {
+                let textToSpeak = item.english;
+                if (currentLanguage === 'korean') {
+                    textToSpeak = item.korean;
+                } else if (currentLanguage === 'spanish') {
+                    textToSpeak = item.spanish;
+                }
+                // 模拟语音播放
+                console.log(`Playing audio for: ${textToSpeak}`);
+                // 实际项目中可以使用 Web Speech API 或音频文件
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 初始化页面
+        init();
+    </script>
+</body>
+</html>
